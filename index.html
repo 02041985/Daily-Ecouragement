@@ -824,7 +824,12 @@ V.admin = () => {
     return header('Admin','Church admin sign-in','For pastors and the media team to add sermons, videos, photos and events.') + `<form class="card pad" data-form="signin" style="max-width:420px">
       <div class="field"><label>Email</label><input class="input" type="email" name="email" autocomplete="username" required></div>
       <div class="field"><label>Password</label><input class="input" type="password" name="password" autocomplete="current-password" required></div>
-      <button class="btn primary" type="submit" style="width:100%;justify-content:center">Sign in</button><div id="signinOut" class="small" style="margin-top:10px;color:var(--rose)"></div></form>`;
+      <button class="btn primary" type="submit" style="width:100%;justify-content:center">Sign in</button><div id="signinOut" class="small" style="margin-top:10px;color:var(--rose)"></div></form>
+      <form class="card pad section" data-form="signup" style="max-width:420px"><h3 style="margin-bottom:6px">New admin? Create your password</h3>
+      <p class="small muted" style="margin-top:0">Use the email address the church added as an admin.</p>
+      <div class="field"><label>Email</label><input class="input" type="email" name="email" autocomplete="username" required></div>
+      <div class="field"><label>Choose a password</label><input class="input" type="password" name="password" minlength="8" autocomplete="new-password" required><span class="tiny muted">At least 8 characters</span></div>
+      <button class="btn" type="submit" style="width:100%;justify-content:center">Create account</button><div id="signupOut" class="small" style="margin-top:10px"></div></form>`;
   }
   const tab = S.adminTab;
   const tabs = [['content','Add content'],['manage','Manage'],['moderate','Prayer & testimonies'],['settings','Church settings']];
@@ -1134,6 +1139,16 @@ document.addEventListener('submit', async e => {
   if (f==='content') submitContent(form);
   if (f==='settings') submitSettings(form);
   if (f==='admins') { const em = String(new FormData(form).get('email')||'').trim().toLowerCase(); if (em) await adminDo(S.sb.from('de_admins').insert({email:em}), 'Admin added'); }
+  if (f==='signup') {
+    const fd = new FormData(form), out = form.querySelector('#signupOut'), btn = form.querySelector('button'); btn.disabled = true; out.textContent = '';
+    const email = String(fd.get('email')).trim().toLowerCase();
+    const { data, error } = await S.sb.auth.signUp({email, password:String(fd.get('password')), options:{emailRedirectTo: location.origin + '/#admin'}});
+    btn.disabled = false;
+    if (error) { out.style.color = 'var(--rose)'; out.textContent = /registered|exists/i.test(error.message) ? 'This email already has an account — use Sign in above.' : error.message; return; }
+    if (data.session) { await refreshAuth(); await loadAll(); return; }
+    out.style.color = 'var(--green)'; out.textContent = 'Account created. Check your email for a confirmation link, then come back here and sign in.';
+    return;
+  }
   if (f==='signin') {
     const fd = new FormData(form), out = form.querySelector('#signinOut'), btn = form.querySelector('button'); btn.disabled = true; out.textContent = '';
     const { error } = await S.sb.auth.signInWithPassword({email:String(fd.get('email')).trim(), password:String(fd.get('password'))});
