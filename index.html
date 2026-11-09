@@ -249,6 +249,8 @@ textarea.input{min-height:110px;resize:vertical}
 .wafab .tip{position:absolute;right:66px;white-space:nowrap;background:#fff;color:var(--ink);font-size:.8rem;font-weight:600;padding:7px 12px;border-radius:10px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .15s}
 .wafab:hover .tip{opacity:1}
 @media (max-width:900px){.wafab{bottom:84px;right:16px;width:52px;height:52px}}
+.fbwrap{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px;display:flex;justify-content:center}
+.fbbtn{background:#1877f2!important;border-color:#1877f2!important;color:#fff!important}
 .ttwrap{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px;min-height:200px}
 .ttbtn{background:#111!important;border-color:#111!important;color:#fff!important}
 .embed169{position:relative;aspect-ratio:16/9;background:#000}.embed169 iframe,.embedtt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
@@ -372,7 +374,7 @@ const LOGO = `<svg viewBox="0 0 24 24" fill="none" stroke="#1b2140" stroke-width
 const DEFAULT_SETTINGS = {
   name:'Daily Encouragement with Pastor London', tagline:'A word of hope for every day — loving God, loving people, serving our city.',
   address:'14 Harbour View Road, City Centre', phone:'', email:'', whatsapp:'+263717375289',
-  liveUrl:'https://www.youtube.com/@dailyencouragementblog/live', youtube:'https://www.youtube.com/@dailyencouragementblog', facebook:'', instagram:'', tiktok:'https://www.tiktok.com/@pastorlondon',
+  liveUrl:'https://www.youtube.com/@dailyencouragementblog/live', youtube:'https://www.youtube.com/@dailyencouragementblog', facebook:'https://www.facebook.com/share/1EokaCVRbk/', instagram:'', tiktok:'https://www.tiktok.com/@pastorlondon',
   services:'Sunday | 9:00 AM | First Service\nSunday | 11:30 AM | Second Service\nWednesday | 7:00 PM | Midweek Prayer & Bible Study',
   pastorName:'Pastor London', pastorTitle:'Founder & Lead Pastor',
   pastorBio:'Pastor London leads Daily Encouragement, sharing a word of hope from Scripture to strengthen, comfort and inspire people in every season of life.\n\n[Add Pastor London\'s story here — how he came to faith, his calling to ministry, his family, and what he is passionate about. Edit this in Admin → Church settings.]',
@@ -502,6 +504,13 @@ const TT_LOGO = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;
 function tiktokFeed(handle){
   if (!handle) return '';
   return `<div class="ttwrap"><blockquote class="tiktok-embed" cite="https://www.tiktok.com/@${esc(handle)}" data-unique-id="${esc(handle)}" data-embed-type="creator" style="max-width:780px;min-width:288px;margin:0 auto"><section><a target="_blank" rel="noopener" href="https://www.tiktok.com/@${esc(handle)}">@${esc(handle)} on TikTok</a></section></blockquote></div>`;
+}
+const FB_LOGO = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12z"/></svg>';
+const fbEmbeddable = u => /facebook\.com\//.test(u||'') && !/facebook\.com\/share\//.test(u||'');
+function facebookFeed(url, h=700){
+  if (!fbEmbeddable(url)) return '';
+  const src = 'https://www.facebook.com/plugins/page.php?href=' + encodeURIComponent(url) + `&tabs=timeline%2Cevents&width=500&height=${h}&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true`;
+  return `<div class="fbwrap"><iframe src="${src}" width="500" height="${h}" style="border:none;overflow:hidden;width:100%;max-width:500px" scrolling="no" frameborder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" loading="lazy" title="Facebook posts"></iframe></div>`;
 }
 function loadTikTok(){
   if (!document.querySelector('.tiktok-embed')) return;
@@ -658,6 +667,7 @@ V.home = () => {
   ${shorts.length ? `<section class="section"><div class="sechead"><h2>Short videos</h2><a class="btn ghost" href="#watch" data-act="watchtab" data-tab="short">See all →</a></div><div class="hscroll">${shorts.map(shortCard).join('')}</div></section>` : ''}
 
   ${tiktokHandle(st.tiktok) ? `<section class="section"><div class="sechead"><h2>Latest on TikTok</h2><a class="btn ttbtn sm" href="${esc(st.tiktok)}" target="_blank" rel="noopener">${TT_LOGO}Follow @${esc(tiktokHandle(st.tiktok))}</a></div>${tiktokFeed(tiktokHandle(st.tiktok))}</section>` : ''}
+  ${st.facebook ? `<section class="section"><div class="sechead"><h2>Latest on Facebook</h2><a class="btn fbbtn sm" href="${esc(st.facebook)}" target="_blank" rel="noopener">${FB_LOGO}Follow on Facebook</a></div>${facebookFeed(st.facebook, 600) || `<div class="card pad row between wrap"><span class="muted">Videos, photos and posts from Pastor London on Facebook.</span><a class="btn fbbtn" href="${esc(st.facebook)}" target="_blank" rel="noopener">${FB_LOGO}Open Facebook</a></div>`}</section>` : ''}
 
   <section class="section grid g2">
     ${arts.map(articleCard).join('')}
@@ -681,11 +691,11 @@ V.watch = () => {
   if (q) list = list.filter(x => [x.title,x.speaker,x.series,x.scripture,x.desc].join(' ').toLowerCase().includes(q));
   return header('Watch', 'Sermons & videos', 'Catch up on Sunday messages or share a short word of encouragement with a friend.', S.settings.liveUrl ? `<a class="btn" style="background:#e1251b;border-color:#e1251b;color:#fff" href="${esc(S.settings.liveUrl)}" target="_blank" rel="noopener"><span class="dot" style="background:#fff"></span>Watch live</a>` : '') + `
     <div class="row wrap" style="margin-bottom:16px">
-      <div class="chips"><button class="chip ${tab==='sermon'?'on':''}" data-act="watchtab" data-tab="sermon">Full sermons</button><button class="chip ${tab==='short'?'on':''}" data-act="watchtab" data-tab="short">Short videos</button>${tiktokHandle(S.settings.tiktok)?`<button class="chip ${tab==='tiktok'?'on':''}" data-act="watchtab" data-tab="tiktok">TikTok</button>`:''}</div>
-      ${tab==='tiktok'?'':`<div class="search">${ic('search')}<input class="input" placeholder="Search by title, speaker or scripture" data-bind="watchQ" value="${esc(S.watchQ)}"></div>`}
+      <div class="chips"><button class="chip ${tab==='sermon'?'on':''}" data-act="watchtab" data-tab="sermon">Full sermons</button><button class="chip ${tab==='short'?'on':''}" data-act="watchtab" data-tab="short">Short videos</button>${tiktokHandle(S.settings.tiktok)?`<button class="chip ${tab==='tiktok'?'on':''}" data-act="watchtab" data-tab="tiktok">TikTok</button>`:''}${S.settings.facebook?`<button class="chip ${tab==='facebook'?'on':''}" data-act="watchtab" data-tab="facebook">Facebook</button>`:''}</div>
+      ${['tiktok','facebook'].includes(tab)?'':`<div class="search">${ic('search')}<input class="input" placeholder="Search by title, speaker or scripture" data-bind="watchQ" value="${esc(S.watchQ)}"></div>`}
     </div>
     ${tab==='sermon' && series.length>2 ? `<div class="chips" style="margin-bottom:18px">${series.map(s=>`<button class="chip ${S.watchSeries===s?'on':''}" data-act="series" data-v="${esc(s)}">${esc(s)}</button>`).join('')}</div>` : ''}
-    ${tab==='tiktok' ? `<div class="row between wrap" style="margin-bottom:14px"><p class="muted" style="margin:0">Pastor London's latest TikTok videos — updated automatically whenever he posts.</p><a class="btn ttbtn" href="${esc(S.settings.tiktok)}" target="_blank" rel="noopener">${TT_LOGO}Follow on TikTok</a></div>${tiktokFeed(tiktokHandle(S.settings.tiktok))}` : `<div id="results">${!list.length ? '<div class="empty">Nothing found.</div>' : tab==='short' ? `<div class="shorts">${list.map(shortCard).join('')}</div>` : `<div class="grid g3">${list.map(mediaCard).join('')}</div>`}</div>`}`;
+    ${tab==='facebook' ? `<div class="row between wrap" style="margin-bottom:14px"><p class="muted" style="margin:0">Videos, photos and posts from Pastor London's Facebook — updated automatically.</p><a class="btn fbbtn" href="${esc(S.settings.facebook)}" target="_blank" rel="noopener">${FB_LOGO}Follow on Facebook</a></div>${facebookFeed(S.settings.facebook) || `<div class="card pad empty">Open Pastor London's Facebook to see his latest videos and posts.<div style="margin-top:14px"><a class="btn fbbtn" href="${esc(S.settings.facebook)}" target="_blank" rel="noopener">${FB_LOGO}Open Facebook</a></div></div>`}` : tab==='tiktok' ? `<div class="row between wrap" style="margin-bottom:14px"><p class="muted" style="margin:0">Pastor London's latest TikTok videos — updated automatically whenever he posts.</p><a class="btn ttbtn" href="${esc(S.settings.tiktok)}" target="_blank" rel="noopener">${TT_LOGO}Follow on TikTok</a></div>${tiktokFeed(tiktokHandle(S.settings.tiktok))}` : `<div id="results">${!list.length ? '<div class="empty">Nothing found.</div>' : tab==='short' ? `<div class="shorts">${list.map(shortCard).join('')}</div>` : `<div class="grid g3">${list.map(mediaCard).join('')}</div>`}</div>`}`;
 };
 
 V.listen = () => {
@@ -712,7 +722,7 @@ V.gallery = () => {
   const albums = ['All', ...new Set(list.map(x=>x.album).filter(Boolean))];
   if (S.album!=='All') list = list.filter(x=>x.album===S.album);
   S._gallery = list.map(x=>x.id);
-  return header('Gallery', 'Photo gallery', 'Moments from worship, fellowship and outreach.') + `
+  return header('Gallery', 'Photo gallery', 'Moments from worship, fellowship and outreach.', S.settings.facebook ? `<a class="btn fbbtn" href="${esc(S.settings.facebook)}" target="_blank" rel="noopener">${FB_LOGO}More photos on Facebook</a>` : '') + `
     <div class="chips" style="margin-bottom:18px">${albums.map(a=>`<button class="chip ${S.album===a?'on':''}" data-act="album" data-v="${esc(a)}">${esc(a)}</button>`).join('')}</div>
     ${list.length ? `<div class="gallery">${list.map((x,i)=>{ const h = x.assetId ? null : [300,420,360,480][hash(x.id)%4]; return `<figure data-act="photo" data-i="${i}"><img src="${x.assetId ? mediaUrl(x) : art(x.title+x.id, 400, h, 'photo')}" alt="${esc(x.title)}" loading="lazy"><figcaption>${esc(x.title)}${x.date?' · '+fmtShort(x.date):''}</figcaption></figure>`; }).join('')}</div>` : '<div class="empty">No photos yet.</div>'}`;
 };
