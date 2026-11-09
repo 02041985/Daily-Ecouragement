@@ -249,6 +249,10 @@ textarea.input{min-height:110px;resize:vertical}
 .wafab .tip{position:absolute;right:66px;white-space:nowrap;background:#fff;color:var(--ink);font-size:.8rem;font-weight:600;padding:7px 12px;border-radius:10px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .15s}
 .wafab:hover .tip{opacity:1}
 @media (max-width:900px){.wafab{bottom:84px;right:16px;width:52px;height:52px}}
+.ttwrap{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px;min-height:200px}
+.ttbtn{background:#111!important;border-color:#111!important;color:#fff!important}
+.embed169{position:relative;aspect-ratio:16/9;background:#000}.embed169 iframe,.embedtt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.embedtt{position:relative;width:min(340px,100%);aspect-ratio:9/16.5;margin:0 auto;background:#000}
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;z-index:200;font-size:.88rem;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100% - 32px);text-align:center}
 @media (max-width:900px){.toast{bottom:90px}}
 
@@ -368,7 +372,7 @@ const LOGO = `<svg viewBox="0 0 24 24" fill="none" stroke="#1b2140" stroke-width
 const DEFAULT_SETTINGS = {
   name:'Daily Encouragement with Pastor London', tagline:'A word of hope for every day — loving God, loving people, serving our city.',
   address:'14 Harbour View Road, City Centre', phone:'', email:'', whatsapp:'+263717375289',
-  liveUrl:'https://www.youtube.com/@dailyencouragementblog/live', youtube:'https://www.youtube.com/@dailyencouragementblog', facebook:'', instagram:'',
+  liveUrl:'https://www.youtube.com/@dailyencouragementblog/live', youtube:'https://www.youtube.com/@dailyencouragementblog', facebook:'', instagram:'', tiktok:'https://www.tiktok.com/@pastorlondon',
   services:'Sunday | 9:00 AM | First Service\nSunday | 11:30 AM | Second Service\nWednesday | 7:00 PM | Midweek Prayer & Bible Study',
   pastorName:'Pastor London', pastorTitle:'Founder & Lead Pastor',
   pastorBio:'Pastor London leads Daily Encouragement, sharing a word of hope from Scripture to strengthen, comfort and inspire people in every season of life.\n\n[Add Pastor London\'s story here — how he came to faith, his calling to ministry, his family, and what he is passionate about. Edit this in Admin → Church settings.]',
@@ -491,6 +495,19 @@ function loadLocal(k, d){ try { return JSON.parse(localStorage.getItem('gh_'+k))
 function saveLocal(k, v){ try { localStorage.setItem('gh_'+k, JSON.stringify(v)); } catch(e){} }
 
 const mediaUrl = x => x.assetUrl || '';
+const tiktokHandle = u => { const m = String(u||'').match(/tiktok\.com\/@([A-Za-z0-9._]+)/); return m ? m[1] : ''; };
+const tiktokId = u => { const m = String(u||'').match(/tiktok\.com\/.*\/video\/(\d+)/); return m ? m[1] : ''; };
+const youtubeId = u => { const m = String(u||'').match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; };
+const TT_LOGO = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M16.6 2h-3.4v13.4a2.9 2.9 0 1 1-2.9-2.9c.3 0 .6 0 .9.1V9.1a6.3 6.3 0 1 0 5.4 6.3V8.6a8 8 0 0 0 4.6 1.5V6.7a4.7 4.7 0 0 1-4.6-4.7z"/></svg>';
+function tiktokFeed(handle){
+  if (!handle) return '';
+  return `<div class="ttwrap"><blockquote class="tiktok-embed" cite="https://www.tiktok.com/@${esc(handle)}" data-unique-id="${esc(handle)}" data-embed-type="creator" style="max-width:780px;min-width:288px;margin:0 auto"><section><a target="_blank" rel="noopener" href="https://www.tiktok.com/@${esc(handle)}">@${esc(handle)} on TikTok</a></section></blockquote></div>`;
+}
+function loadTikTok(){
+  if (!document.querySelector('.tiktok-embed')) return;
+  const old = document.getElementById('tt-embed-js'); if (old) old.remove();
+  const sc = document.createElement('script'); sc.id = 'tt-embed-js'; sc.async = true; sc.src = 'https://www.tiktok.com/embed.js'; document.body.appendChild(sc);
+}
 const thumbOf = (x, kind) => x.posterUrl ? x.posterUrl : (x.type==='photo' && x.assetId ? mediaUrl(x) : art(x.title + (x.id||''), kind==='tall'?360:640, kind==='tall'?640:360, kind==='photo'?'photo':'rays'));
 
 function allItems(){
@@ -640,6 +657,8 @@ V.home = () => {
 
   ${shorts.length ? `<section class="section"><div class="sechead"><h2>Short videos</h2><a class="btn ghost" href="#watch" data-act="watchtab" data-tab="short">See all →</a></div><div class="hscroll">${shorts.map(shortCard).join('')}</div></section>` : ''}
 
+  ${tiktokHandle(st.tiktok) ? `<section class="section"><div class="sechead"><h2>Latest on TikTok</h2><a class="btn ttbtn sm" href="${esc(st.tiktok)}" target="_blank" rel="noopener">${TT_LOGO}Follow @${esc(tiktokHandle(st.tiktok))}</a></div>${tiktokFeed(tiktokHandle(st.tiktok))}</section>` : ''}
+
   <section class="section grid g2">
     ${arts.map(articleCard).join('')}
   </section>
@@ -662,11 +681,11 @@ V.watch = () => {
   if (q) list = list.filter(x => [x.title,x.speaker,x.series,x.scripture,x.desc].join(' ').toLowerCase().includes(q));
   return header('Watch', 'Sermons & videos', 'Catch up on Sunday messages or share a short word of encouragement with a friend.', S.settings.liveUrl ? `<a class="btn" style="background:#e1251b;border-color:#e1251b;color:#fff" href="${esc(S.settings.liveUrl)}" target="_blank" rel="noopener"><span class="dot" style="background:#fff"></span>Watch live</a>` : '') + `
     <div class="row wrap" style="margin-bottom:16px">
-      <div class="chips"><button class="chip ${tab==='sermon'?'on':''}" data-act="watchtab" data-tab="sermon">Full sermons</button><button class="chip ${tab==='short'?'on':''}" data-act="watchtab" data-tab="short">Short videos</button></div>
-      <div class="search">${ic('search')}<input class="input" placeholder="Search by title, speaker or scripture" data-bind="watchQ" value="${esc(S.watchQ)}"></div>
+      <div class="chips"><button class="chip ${tab==='sermon'?'on':''}" data-act="watchtab" data-tab="sermon">Full sermons</button><button class="chip ${tab==='short'?'on':''}" data-act="watchtab" data-tab="short">Short videos</button>${tiktokHandle(S.settings.tiktok)?`<button class="chip ${tab==='tiktok'?'on':''}" data-act="watchtab" data-tab="tiktok">TikTok</button>`:''}</div>
+      ${tab==='tiktok'?'':`<div class="search">${ic('search')}<input class="input" placeholder="Search by title, speaker or scripture" data-bind="watchQ" value="${esc(S.watchQ)}"></div>`}
     </div>
     ${tab==='sermon' && series.length>2 ? `<div class="chips" style="margin-bottom:18px">${series.map(s=>`<button class="chip ${S.watchSeries===s?'on':''}" data-act="series" data-v="${esc(s)}">${esc(s)}</button>`).join('')}</div>` : ''}
-    <div id="results">${!list.length ? '<div class="empty">Nothing found.</div>' : tab==='short' ? `<div class="shorts">${list.map(shortCard).join('')}</div>` : `<div class="grid g3">${list.map(mediaCard).join('')}</div>`}</div>`;
+    ${tab==='tiktok' ? `<div class="row between wrap" style="margin-bottom:14px"><p class="muted" style="margin:0">Pastor London's latest TikTok videos — updated automatically whenever he posts.</p><a class="btn ttbtn" href="${esc(S.settings.tiktok)}" target="_blank" rel="noopener">${TT_LOGO}Follow on TikTok</a></div>${tiktokFeed(tiktokHandle(S.settings.tiktok))}` : `<div id="results">${!list.length ? '<div class="empty">Nothing found.</div>' : tab==='short' ? `<div class="shorts">${list.map(shortCard).join('')}</div>` : `<div class="grid g3">${list.map(mediaCard).join('')}</div>`}</div>`}`;
 };
 
 V.listen = () => {
@@ -799,7 +818,7 @@ V.contact = () => {
   const st = S.settings;
   const wa = st.whatsapp ? 'https://wa.me/' + st.whatsapp.replace(/\D/g,'') : '';
   const map = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(st.name + ' ' + st.address);
-  const socials = [['YouTube',st.youtube],['Facebook',st.facebook],['Instagram',st.instagram]].filter(s=>s[1]);
+  const socials = [['YouTube',st.youtube],['TikTok',st.tiktok],['Facebook',st.facebook],['Instagram',st.instagram]].filter(s=>s[1]);
   return header('Contact', 'Plan your visit', 'We\'d love to meet you. Here\'s how to find us and get in touch.') + `
   <div class="grid g2">
     <div class="card pad stack">
@@ -831,7 +850,7 @@ function adminForm(t){
   if (t==='article') h += `<div class="field"><label>Summary</label><input class="input" name="desc"></div><div class="field"><label>Article text</label><textarea class="input" name="body" style="min-height:200px" required></textarea></div>`;
   if (['sermon','short','audio','photo'].includes(t)) h += `<div class="field"><label>${t==='photo'?'Photo file':t==='audio'?'Audio file (MP3, M4A…)':'Video file (MP4) — up to 20 MB'}</label><input class="input" type="file" name="file" accept="${t==='photo'?'image/*':t==='audio'?'audio/*':'video/*'}" ${t==='photo'?'required':''}><div class="progress" hidden><i></i></div></div>`;
   if (['sermon','short'].includes(t)) h += `<div class="field"><label>Thumbnail image (optional)</label><input class="input" type="file" name="poster" accept="image/*"></div>`;
-  if (['sermon','short','audio'].includes(t)) h += f('link','Or a link (YouTube, Facebook, podcast…)','url','https://');
+  if (['sermon','short','audio'].includes(t)) h += f('link','Or a link (YouTube, TikTok, Facebook, podcast…) — YouTube and TikTok videos play inside the app','url','https://');
   return h;
 }
 V.admin = () => {
@@ -871,7 +890,7 @@ V.admin = () => {
     const f = (k,l,ta=false,hint='') => `<div class="field"><label>${l}</label>${ta?`<textarea class="input" name="${k}" style="min-height:${ta}px">${esc(st[k])}</textarea>`:`<input class="input" name="${k}" value="${esc(st[k])}">`}${hint?`<span class="tiny muted">${hint}</span>`:''}</div>`;
     body = `<form class="card pad" data-form="settings"><div class="grid g2" style="gap:0 20px">
       ${f('name','Church name')}${f('tagline','Tagline')}${f('address','Address')}${f('phone','Phone')}${f('email','Email')}${f('whatsapp','WhatsApp number','', 'Include country code, e.g. +971 50 123 4567. Prayer requests and testimonies are sent here.')}
-      ${f('liveUrl','Live stream link')}${f('youtube','YouTube channel link')}${f('facebook','Facebook link')}${f('instagram','Instagram link')}</div>
+      ${f('liveUrl','Live stream link')}${f('youtube','YouTube channel link')}${f('facebook','Facebook link')}${f('instagram','Instagram link')}${f('tiktok','TikTok link')}</div>
       ${f('services','Service times',90,'One per line: Day | Time | Name')}
       <div class="grid g2" style="gap:0 20px">${f('pastorName','Pastor name')}${f('pastorTitle','Pastor title')}</div>
       <div class="field"><label>Pastor photo</label><input class="input" type="file" name="pastorPhoto" accept="image/*" ></div>
@@ -896,6 +915,7 @@ function render(){
   document.getElementById('view').innerHTML = (V[r] || V.home)();
   if (S.loadNote) document.getElementById('view').insertAdjacentHTML('afterbegin', `<div class="note" style="margin-bottom:16px">${esc(S.loadNote)}</div>`);
   responsiveFix();
+  loadTikTok();
 }
 function responsiveFix(){
   const narrow = window.innerWidth < 760;
@@ -937,7 +957,10 @@ function openItem(x){
   if (x.type==='audio') { playAudio(x); return; }
   const vert = x.type==='short';
   const src = mediaUrl(x);
-  const player = src ? `<div class="${vert?'vert':''}" style="background:#000"><video src="${src}" ${x.posterUrl?`poster="${esc(x.posterUrl)}"`:''} controls playsinline autoplay></video></div>`
+  const ttid = !src && tiktokId(x.link), ytid = !src && youtubeId(x.link);
+  const player = ttid ? `<div style="background:#000;padding:12px 0"><div class="embedtt"><iframe src="https://www.tiktok.com/embed/v2/${ttid}" allow="encrypted-media; fullscreen" allowfullscreen></iframe></div></div>`
+    : ytid ? `<div class="embed169"><iframe src="https://www.youtube.com/embed/${ytid}?autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`
+    : src ? `<div class="${vert?'vert':''}" style="background:#000"><video src="${src}" ${x.posterUrl?`poster="${esc(x.posterUrl)}"`:''} controls playsinline autoplay></video></div>`
     : `<div class="thumb" style="aspect-ratio:${vert?'9/12':'16/9'}"><img src="${thumbOf(x, vert?'tall':'')}" alt=""><div style="position:absolute;inset:0;display:grid;place-items:center;color:#fff;text-align:center;padding:20px"><div><div class="play" style="position:static;transform:none;margin:0 auto 12px">${ic('play')}</div>${x.link?`<a class="btn gold" href="${esc(x.link)}" target="_blank" rel="noopener">Watch now ${ic('ext')}</a>`:`<div class="small" style="background:rgba(0,0,0,.35);padding:8px 14px;border-radius:10px">${x.sample?'Sample video — the church can upload the real recording from Admin':'Video coming soon'}</div>`}</div></div></div>`;
   openModal(`${player}<div class="pad" style="padding:22px 26px 28px">${x.series?`<span class="tag">${esc(x.series)}</span>`:''}<h2 style="margin:8px 0 4px">${esc(x.title)}</h2><div class="small muted">${esc(x.speaker||'')}${x.date?' · '+fmtDate(x.date):''}${x.duration?' · '+esc(x.duration):''}</div>
     ${x.scripture?`<div style="margin-top:10px;color:var(--gold);font-weight:600" class="small">${esc(x.scripture)}</div>`:''}${x.desc?`<p style="color:var(--ink2)">${esc(x.desc)}</p>`:''}
