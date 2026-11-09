@@ -1,4 +1,4 @@
-# Daily Encouragement
+# Daily Encouragement with Pastor London
 
 A church web app: full sermons and short videos, audio messages, articles, photo gallery, prayer requests with a prayer wall, testimonies, weekly and monthly programmes, a calendar, pastor biography and church history, giving details and contact info.
 
