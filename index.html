@@ -243,6 +243,12 @@ textarea.input{min-height:110px;resize:vertical}
 .player .x2{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:50%;width:30px;height:30px;flex-shrink:0}
 @media (max-width:900px){.player{bottom:78px}}
 
+.wafab{position:fixed;right:22px;bottom:22px;z-index:35;width:56px;height:56px;border-radius:50%;background:#25d366;color:#fff;display:grid;place-items:center;box-shadow:0 8px 22px rgba(37,211,102,.45);text-decoration:none;transition:transform .15s}
+.wafab:hover{transform:scale(1.06)}
+.wafab svg{width:30px;height:30px}
+.wafab .tip{position:absolute;right:66px;white-space:nowrap;background:#fff;color:var(--ink);font-size:.8rem;font-weight:600;padding:7px 12px;border-radius:10px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .15s}
+.wafab:hover .tip{opacity:1}
+@media (max-width:900px){.wafab{bottom:84px;right:16px;width:52px;height:52px}}
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;z-index:200;font-size:.88rem;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100% - 32px);text-align:center}
 @media (max-width:900px){.toast{bottom:90px}}
 
@@ -269,6 +275,7 @@ textarea.input{min-height:110px;resize:vertical}
 </div>
 <nav class="bottomnav" id="bottomnav"></nav>
 <div id="playerHost"></div>
+<div id="waHost"></div>
 <div id="modalHost"></div>
 
 <script>
@@ -360,7 +367,7 @@ const LOGO = `<svg viewBox="0 0 24 24" fill="none" stroke="#1b2140" stroke-width
    ============================================================ */
 const DEFAULT_SETTINGS = {
   name:'Daily Encouragement with Pastor London', tagline:'A word of hope for every day — loving God, loving people, serving our city.',
-  address:'14 Harbour View Road, City Centre', phone:'', email:'', whatsapp:'',
+  address:'14 Harbour View Road, City Centre', phone:'', email:'', whatsapp:'+263717375289',
   liveUrl:'https://www.youtube.com/@dailyencouragementblog/live', youtube:'https://www.youtube.com/@dailyencouragementblog', facebook:'', instagram:'',
   services:'Sunday | 9:00 AM | First Service\nSunday | 11:30 AM | Second Service\nWednesday | 7:00 PM | Midweek Prayer & Bible Study',
   pastorName:'Pastor London', pastorTitle:'Founder & Lead Pastor',
@@ -563,6 +570,8 @@ function renderChrome(){
   const bn = [['home','Home','home'],['watch','Watch','video'],['listen','Listen','audio'],['prayer','Prayer','pray'],['_more','More','more']];
   document.getElementById('bottomnav').innerHTML = bn.map(([id,l,i]) => `<button class="${r===id || (id==='_more' && !['home','watch','listen','prayer'].includes(r))?'on':''}" data-act="${id==='_more'?'more':'go'}" data-r="${id}">${ic(i)}${l}</button>`).join('');
   document.title = st.name;
+  const waNum = String(st.whatsapp||'').replace(/\D/g,'');
+  document.getElementById('waHost').innerHTML = waNum ? `<a class="wafab" href="https://wa.me/${waNum}?text=${encodeURIComponent('Hello Pastor London, I found you through the Daily Encouragement website.')}" target="_blank" rel="noopener" aria-label="Chat on WhatsApp"><span class="tip">Chat with us on WhatsApp</span><svg viewBox="0 0 32 32" fill="currentColor"><path d="M16 3C8.8 3 3 8.7 3 15.8c0 2.5.7 4.9 2 7L3 29l6.4-2a13.2 13.2 0 0 0 6.6 1.7c7.2 0 13-5.7 13-12.8S23.2 3 16 3zm0 23.4c-2.1 0-4.1-.6-5.9-1.6l-.4-.3-3.8 1.2 1.2-3.7-.3-.4a10.4 10.4 0 0 1-1.7-5.8C5.1 10 10 5.3 16 5.3s10.9 4.7 10.9 10.6S22 26.4 16 26.4zm6-7.9c-.3-.2-1.9-1-2.2-1-.3-.1-.5-.2-.7.2l-1 1.2c-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.2-.2-.3 0-.5.1-.7l.5-.6.3-.5c.1-.2 0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.8s1.2 3.2 1.4 3.5c.2.2 2.4 3.6 5.8 5 .8.4 1.4.6 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></a>` : '';
 }
 
 /* ============================================================
@@ -797,7 +806,7 @@ V.contact = () => {
       <div class="row" style="align-items:flex-start"><span class="tile" style="padding:0;border:0"><span class="ic">${ic('pin')}</span></span><div><b>Address</b><div class="muted">${esc(st.address)}</div><a class="btn ghost sm" href="${map}" target="_blank" rel="noopener">Open in maps ${ic('ext')}</a></div></div>
       ${st.email?`<div class="row" style="align-items:flex-start"><span class="tile" style="padding:0;border:0"><span class="ic">${ic('mail')}</span></span><div><b>Email</b><div class="muted">${esc(st.email)}</div></div></div>`:''}
       ${st.phone?`<div class="row" style="align-items:flex-start"><span class="tile" style="padding:0;border:0"><span class="ic">${ic('clock')}</span></span><div><b>Phone</b><div class="muted">${esc(st.phone)}</div></div></div>`:''}
-      ${wa ? `<a class="btn primary" href="${wa}" target="_blank" rel="noopener">${ic('wa')}Message us on WhatsApp</a>` : ''}
+      ${wa ? `<a class="btn" style="background:#25d366;border-color:#25d366;color:#fff" href="${wa}" target="_blank" rel="noopener">${ic('wa')}Message Pastor London on WhatsApp</a>` : ''}
       ${socials.length ? `<div class="row wrap">${socials.map(([n,u])=>`<a class="btn sm" href="${esc(u)}" target="_blank" rel="noopener">${n} ${ic('ext')}</a>`).join('')}</div>` : ''}
     </div>
     <div class="card pad"><h3 style="margin-bottom:12px">Service times</h3>${parseLines(st.services,3).map(s=>`<div class="prog"><span class="tm">${esc(s[1])}</span><div><b class="small">${esc(s[0])}</b><div class="tiny muted">${esc(s[2])}</div></div></div>`).join('')}
