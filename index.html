@@ -115,7 +115,14 @@ textarea.input{min-height:110px;resize:vertical}
 .hero .btn{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;backdrop-filter:blur(6px)}
 .hero .btn.gold{background:var(--gold);border-color:var(--gold)}
 @media (max-width:560px){.hero{padding:24px;min-height:340px}.hero h1{font-size:2rem}}
-.nextsvc{display:inline-flex;gap:8px;align-items:center;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 12px;font-size:.8rem;margin-bottom:14px;backdrop-filter:blur(6px)}
+.hero>a.livebtn{position:absolute;top:20px;right:20px;display:inline-flex;align-items:center;gap:9px;background:#e1251b;color:#fff;text-decoration:none;font-weight:700;font-size:.85rem;letter-spacing:.04em;padding:10px 16px 10px 14px;border-radius:999px;box-shadow:0 6px 18px rgba(225,37,27,.45);transition:transform .15s,background .15s;z-index:2}
+.hero>a.livebtn:hover{background:#c41e15;transform:translateY(-1px)}
+.livebtn .pulse{width:9px;height:9px;border-radius:50%;background:#fff;position:relative;flex-shrink:0}
+.livebtn .pulse::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid #fff;opacity:.8;animation:pulse 1.6s ease-out infinite}
+.livebtn svg{width:16px;height:16px}
+@keyframes pulse{from{transform:scale(.6);opacity:.9}to{transform:scale(1.6);opacity:0}}
+@media (max-width:560px){.hero{padding-top:72px}.hero>a.livebtn{top:16px;right:16px;padding:8px 13px 8px 12px;font-size:.78rem}}
+.nextsvc{align-self:flex-start;display:inline-flex;gap:8px;align-items:center;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 12px;font-size:.8rem;margin-bottom:14px;backdrop-filter:blur(6px)}
 .dot{width:8px;height:8px;border-radius:50%;background:#7be0a6;display:inline-block}
 
 /* Media cards */
@@ -354,7 +361,7 @@ const LOGO = `<svg viewBox="0 0 24 24" fill="none" stroke="#1b2140" stroke-width
 const DEFAULT_SETTINGS = {
   name:'Daily Encouragement with Pastor London', tagline:'A word of hope for every day — loving God, loving people, serving our city.',
   address:'14 Harbour View Road, City Centre', phone:'', email:'', whatsapp:'',
-  liveUrl:'', youtube:'', facebook:'', instagram:'',
+  liveUrl:'https://www.youtube.com/@dailyencouragementblog/live', youtube:'https://www.youtube.com/@dailyencouragementblog', facebook:'', instagram:'',
   services:'Sunday | 9:00 AM | First Service\nSunday | 11:30 AM | Second Service\nWednesday | 7:00 PM | Midweek Prayer & Bible Study',
   pastorName:'Pastor London', pastorTitle:'Founder & Lead Pastor',
   pastorBio:'Pastor London leads Daily Encouragement, sharing a word of hope from Scripture to strengthen, comfort and inspire people in every season of life.\n\n[Add Pastor London\'s story here — how he came to faith, his calling to ministry, his family, and what he is passionate about. Edit this in Admin → Church settings.]',
@@ -600,12 +607,12 @@ V.home = () => {
   const tiles = [['watch','Sermons','video'],['watch','Short Videos','short','short'],['listen','Audio','audio'],['read','Articles','book'],['gallery','Gallery','photo'],['prayer','Prayer','pray'],['testimonies','Testimonies','star'],['programs','Programmes','list'],['calendar','Calendar','cal'],['about','Biography','user']];
   return `
   <section class="hero"><img class="bgart" src="${art('hero-'+st.name, 1200, 520)}" alt="">
+    ${st.liveUrl ? `<a class="livebtn" href="${esc(st.liveUrl)}" target="_blank" rel="noopener"><span class="pulse"></span>WATCH LIVE<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.8 15.1V8.9l5.8 3.1z"/></svg></a>` : ''}
     ${ns ? `<div class="nextsvc"><span class="dot"></span>Next: ${esc(ns.label)} · ${ns.day} ${esc(ns.time)}</div>` : ''}
     <h1>Welcome to ${esc(st.name)}</h1>
     <p>${esc(st.tagline)}</p>
     <div class="row wrap">
       ${latest ? `<button class="btn gold" data-act="open" data-id="${esc(latest.id)}">${ic('play')}Watch latest sermon</button>` : ''}
-      ${st.liveUrl ? `<a class="btn" href="${esc(st.liveUrl)}" target="_blank" rel="noopener">${ic('video')}Watch live</a>` : ''}
       <a class="btn" href="#prayer">${ic('pray')}Request prayer</a>
     </div>
   </section>
@@ -644,7 +651,7 @@ V.watch = () => {
   if (tab==='sermon' && S.watchSeries!=='All') list = list.filter(x=>x.series===S.watchSeries);
   const q = S.watchQ.toLowerCase();
   if (q) list = list.filter(x => [x.title,x.speaker,x.series,x.scripture,x.desc].join(' ').toLowerCase().includes(q));
-  return header('Watch', 'Sermons & videos', 'Catch up on Sunday messages or share a short word of encouragement with a friend.', S.settings.liveUrl ? `<a class="btn primary" href="${esc(S.settings.liveUrl)}" target="_blank" rel="noopener"><span class="dot"></span>Live stream</a>` : '') + `
+  return header('Watch', 'Sermons & videos', 'Catch up on Sunday messages or share a short word of encouragement with a friend.', S.settings.liveUrl ? `<a class="btn" style="background:#e1251b;border-color:#e1251b;color:#fff" href="${esc(S.settings.liveUrl)}" target="_blank" rel="noopener"><span class="dot" style="background:#fff"></span>Watch live</a>` : '') + `
     <div class="row wrap" style="margin-bottom:16px">
       <div class="chips"><button class="chip ${tab==='sermon'?'on':''}" data-act="watchtab" data-tab="sermon">Full sermons</button><button class="chip ${tab==='short'?'on':''}" data-act="watchtab" data-tab="short">Short videos</button></div>
       <div class="search">${ic('search')}<input class="input" placeholder="Search by title, speaker or scripture" data-bind="watchQ" value="${esc(S.watchQ)}"></div>
