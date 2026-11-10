@@ -852,7 +852,7 @@ V.contact = () => {
 const TYPE_LABEL = {sermon:'Full sermon video', short:'Short video', audio:'Audio', article:'Article', photo:'Photo', event:'Special event', weekly:'Weekly programme'};
 function adminForm(t){
   const f = (name,label,type='text',ph='',req=false) => `<div class="field"><label>${label}</label><input class="input" type="${type}" name="${name}" placeholder="${esc(ph)}" ${req?'required':''}></div>`;
-  let h = f('title','Title','text','',true);
+  let h = t==='photo' ? f('title','Caption (optional)','text','e.g. Sunday worship — used for every photo you select') : f('title','Title','text','',true);
   if (['sermon','short','audio','article'].includes(t)) h += f('speaker', t==='article'?'Author':'Speaker / minister');
   if (['sermon','short','audio','article','photo','event'].includes(t)) h += f('date', t==='event'?'Event date':'Date', 'date', '', t==='event');
   if (t==='sermon') h += f('series','Series','text','e.g. Anchored') + f('scripture','Scripture','text','e.g. John 3:16');
@@ -863,7 +863,7 @@ function adminForm(t){
   if (t==='weekly') h += `<div class="field"><label>Day</label><select class="input" name="day">${DAYS.map((d,i)=>`<option value="${i}">${d}</option>`).join('')}</select></div>`;
   if (['sermon','short','audio','event'].includes(t)) h += `<div class="field"><label>Description</label><textarea class="input" name="desc" style="min-height:70px"></textarea></div>`;
   if (t==='article') h += `<div class="field"><label>Summary</label><input class="input" name="desc"></div><div class="field"><label>Article text</label><textarea class="input" name="body" style="min-height:200px" required></textarea></div>`;
-  if (['sermon','short','audio','photo'].includes(t)) h += `<div class="field"><label>${t==='photo'?'Photo file':t==='audio'?'Audio file (MP3, M4A…)':'Video file (MP4) — up to 20 MB'}</label><input class="input" type="file" name="file" accept="${t==='photo'?'image/*':t==='audio'?'audio/*':'video/*'}" ${t==='photo'?'required':''}><div class="progress" hidden><i></i></div></div>`;
+  if (['sermon','short','audio','photo'].includes(t)) h += `<div class="field"><label>${t==='photo'?'Photos — select as many as you like':t==='audio'?'Audio file (MP3, M4A…) — up to 50 MB':'Video file (MP4) — up to 50 MB'}</label><input class="input" type="file" name="file" accept="${t==='photo'?'image/*':t==='audio'?'audio/*':'video/*'}" ${t==='photo'?'required multiple':''}>${t==='photo'?'<span class="tiny muted">Tip: on a phone tap and choose several photos from your gallery; on a computer hold Ctrl (or ⌘ on Mac) to pick many, or drag a whole selection. Big photos are resized automatically.</span>':''}<div class="progress" hidden><i></i></div><div class="small muted upstatus"></div></div>`;
   if (['sermon','short'].includes(t)) h += `<div class="field"><label>Thumbnail image (optional)</label><input class="input" type="file" name="poster" accept="image/*"></div>`;
   if (['sermon','short','audio'].includes(t)) h += f('link','Or a link (YouTube, TikTok, Facebook, podcast…) — YouTube and TikTok videos play inside the app','url','https://');
   return h;
@@ -1099,6 +1099,47 @@ async function uploadFile(file, folder, bar){
   if (bar) bar.firstElementChild.style.width = '100%';
   return path;
 }
+async function shrinkImage(file, max=2000){
+  try {
+    if (!/^image\/(jpeg|png|webp|heic|heif)/i.test(file.type)) return file;
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    if (scale === 1 && file.size < 1.5*1024*1024) return file;
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width*scale); c.height = Math.round(bmp.height*scale);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/,'') + '.jpg', {type:'image/jpeg'});
+  } catch(e){ return file; }
+}
+async function submitPhotos(form, fd, base){
+  const files = fd.getAll('file').filter(f => f && f.size);
+  const btn = form.querySelector('button[type=submit]'), status = form.querySelector('.upstatus'), bar = form.querySelector('.progress');
+  if (!files.length) { toast('Choose at least one photo'); return; }
+  btn.disabled = true; bar.hidden = false;
+  const rows = [], failed = [];
+  for (let i = 0; i < files.length; i++) {
+    status.textContent = `Uploading photo ${i+1} of ${files.length}…`;
+    bar.firstElementChild.style.width = Math.round((i / files.length) * 100) + '%';
+    try {
+      const small = await shrinkImage(files[i]);
+      const path = await uploadFile(small, 'photo');
+      const title = base.title ? (files.length > 1 ? `${base.title} (${i+1})` : base.title) : (base.album || 'Photo');
+      rows.push({...base, title, media_path:path});
+    } catch(e){ failed.push(files[i].name); console.warn(e); }
+  }
+  bar.firstElementChild.style.width = '100%';
+  if (rows.length) {
+    const { error } = await S.sb.from('de_content').insert(rows);
+    if (error) { toast('Photos uploaded but could not be saved: ' + error.message); btn.disabled = false; return; }
+  }
+  status.textContent = `${rows.length} photo${rows.length===1?'':'s'} added to the gallery` + (failed.length ? ` · ${failed.length} failed: ${failed.slice(0,5).join(', ')}` : '');
+  toast(`${rows.length} photo${rows.length===1?'':'s'} published`);
+  form.querySelector('input[type=file]').value = '';
+  btn.disabled = false; btn.innerHTML = `${ic('plus')}Publish`;
+  setTimeout(()=>{ bar.hidden = true; }, 1500);
+  await loadAll();
+}
 const COLS = ['title','speaker','date','series','scripture','duration','category','album','time','location','body','link'];
 async function submitContent(form){
   const fd = new FormData(form), t = S.adminType, btn = form.querySelector('button[type=submit]');
@@ -1107,6 +1148,7 @@ async function submitContent(form){
   const d = fd.get('desc'); if (typeof d === 'string' && d.trim()) row.description = d.trim();
   if (t==='weekly') row.day = +fd.get('day');
   if (!row.date && t!=='weekly') row.date = iso(new Date());
+  if (t==='photo') { const base = {...row}; delete base.title; if (row.title) base.title = row.title; return submitPhotos(form, fd, base); }
   btn.disabled = true; btn.textContent = 'Publishing…';
   try {
     const file = fd.get('file'); if (file && file.size) row.media_path = await uploadFile(file, t, form.querySelector('.progress'));
